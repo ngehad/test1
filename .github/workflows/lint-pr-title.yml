@@ -1,0 +1,24 @@
+name: Lint PR Title
+
+on:
+  pull_request:
+    types: [opened, edited]
+
+jobs:
+  lint-title:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Check out the repository
+      uses: actions/checkout@v2
+
+    - name: Lint PR title
+      id: lint
+      run: |
+        if [[ ! "${{ github.event.pull_request.title }}" =~ ^\((add|update|fix|technical)\)\ SD-[0-9]+:\ .+ ]]; then
+          echo "PR title does not match the required format '(Type) SD-XXX: Title' where Type is one of: add, update, fix, technical"
+          exit 1
+        fi
+
+    - name: Set status
+      run: |
+        echo "PR title matches the required format"
