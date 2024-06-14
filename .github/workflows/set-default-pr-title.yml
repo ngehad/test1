@@ -1,0 +1,25 @@
+name: Set Default PR Title
+
+on:
+  pull_request:
+    types: [opened]
+
+jobs:
+  set-default-pr-title:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set PR Title
+        run: |
+          title="(type) SD-XXX: Title"
+          echo "::set-env name=PR_TITLE::$title"
+          echo "Default PR title set to: $title"
+
+      - name: Update PR Title
+        uses: peter-evans/create-pull-request@v3
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          title: ${{ env.PR_TITLE }}
+          commit-message: Set default PR title
