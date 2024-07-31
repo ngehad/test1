@@ -47,8 +47,6 @@ jobs:
 
       - name: Set PR status
         uses: actions/github-script@v6
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const core = require('@actions/core');
@@ -56,13 +54,13 @@ jobs:
 
             const status = process.env.STATUS;
             const message = process.env.MESSAGE;
-            const { repo, sha } = github.context;
+            const { context } = github;
 
             await github.rest.checks.create({
-              owner: repo.owner,
-              repo: repo.repo,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               name: 'Check PR Line Additions',
-              head_sha: sha,
+              head_sha: context.sha,
               status: 'completed',
               conclusion: status,
               output: {
@@ -71,5 +69,6 @@ jobs:
               },
             });
         env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           STATUS: ${{ steps.check_lines.outputs.status }}
           MESSAGE: ${{ steps.check_lines.outputs.message }}
