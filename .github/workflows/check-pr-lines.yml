@@ -2,7 +2,7 @@ name: Check PR Line Additions
 
 on:
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 jobs:
   check_lines:
@@ -34,13 +34,13 @@ jobs:
           # Choose a random message based on the result
           if [ $ADDITIONS -gt 400 ]; then
             MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
-            echo "::set-output name=status::failure"
-            echo "::set-output name=message::$MESSAGE"
+            echo "STATUS=failure" >> $GITHUB_ENV
+            echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
             exit 1
           else
             MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
-            echo "::set-output name=status::success"
-            echo "::set-output name=message::$MESSAGE"
+            echo "STATUS=success" >> $GITHUB_ENV
+            echo "MESSAGE=$MESSAGE" >> $GITHUB_ENV
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -49,11 +49,12 @@ jobs:
         uses: actions/github-script@v6
         with:
           script: |
+            const { context, github } = require('@actions/github');
+
             const status = process.env.STATUS;
             const message = process.env.MESSAGE;
-            const { context } = require('@actions/github');
 
-            await context.github.rest.checks.create({
+            await github.rest.checks.create({
               owner: context.repo.owner,
               repo: context.repo.repo,
               name: 'Check PR Line Additions',
@@ -67,5 +68,3 @@ jobs:
             });
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          STATUS: ${{ steps.check_lines.outputs.status }}
-          MESSAGE: ${{ steps.check_lines.outputs.message }}
