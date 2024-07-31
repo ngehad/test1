@@ -1,0 +1,30 @@
+name: Check PR Line Additions
+
+on: 
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  check_lines:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+
+      - name: Install GitHub CLI
+        run: sudo apt-get install -y gh
+
+      - name: Check line additions
+        run: |
+          PR_NUMBER=${{ github.event.pull_request.number }}
+          ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
+          echo "Line additions: $ADDITIONS"
+          if [ $ADDITIONS -gt 400 ]; then
+            echo "📏 This PR is a bit too long! Try splitting it into smaller parts. Keeping PRs under 400 lines helps everyone stay focused. Current: $ADDITIONS"
+            exit 1
+          else
+            echo "🎉 Awesome job! PR line additions are within the limit. Keep up the great work!"
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
