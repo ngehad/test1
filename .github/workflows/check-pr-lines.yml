@@ -16,15 +16,31 @@ jobs:
         run: sudo apt-get install -y gh
 
       - name: Check line additions
+        id: check_lines
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
-          echo "Line additions: $ADDITIONS"
+          
+          # Define arrays of success and failure messages
+          SUCCESS_MESSAGES=("🎉 Awesome job! PR line additions are within the limit. Keep up the great work!" "👏 Great work! This PR is within the 400-line limit. Nice job!" "🌟 Fantastic! Your PR is concise and within the limit. Keep it up!")
+          FAILURE_MESSAGES=("📏 This PR is a bit too long! Try splitting it into smaller parts. Keeping PRs under 400 lines helps everyone stay focused. Current: $ADDITIONS" "🚧 Oops! This PR is over 400 lines. Breaking it into smaller pieces will help. Current: $ADDITIONS" "⚠️ This PR is longer than 400 lines. Please break it into smaller chunks for better readability. Current: $ADDITIONS")
+
+          # Function to get a random message
+          get_random_message() {
+            local messages=("$@")
+            echo "${messages[$((RANDOM % ${#messages[@]}))]}"
+          }
+
+          # Choose a random message based on the result
           if [ $ADDITIONS -gt 400 ]; then
-            echo "📏 This PR is a bit too long! Try splitting it into smaller parts. Keeping PRs under 400 lines helps everyone stay focused. Current: $ADDITIONS"
+            echo "PR line additions are more than 400 lines. Should be reduced"
+            MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
+            gh pr comment $PR_NUMBER --body "$MESSAGE"
             exit 1
           else
-            echo "🎉 Awesome job! PR line additions are within the limit. Keep up the great work!"
+            echo "PR line additions is within limit."
+            MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
+            gh pr comment $PR_NUMBER --body "$MESSAGE"
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
