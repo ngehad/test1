@@ -15,10 +15,8 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install -y gh
 
-      - name: Set up GitHub CLI with PAT
-        run: echo "${{ secrets.PAT_TOKEN }}" | gh auth login --with-token
-
       - name: Check line additions
+        id: check_lines
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
@@ -36,13 +34,37 @@ jobs:
           # Choose a random message based on the result
           if [ $ADDITIONS -gt 400 ]; then
             MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
-            echo "PR line additions check failed."
-            gh pr comment $PR_NUMBER --body "$MESSAGE"
+            echo "::set-output name=status::failure"
+            echo "::set-output name=message::$MESSAGE"
             exit 1
           else
             MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
-            echo "PR line additions check passed."
-            gh pr comment $PR_NUMBER --body "$MESSAGE"
+            echo "::set-output name=status::success"
+            echo "::set-output name=message::$MESSAGE"
           fi
+
+      - name: Set PR status
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const status = core.getInput('status');
+            const message = core.getInput('message');
+            const { context } = github;
+
+            await github.rest.checks.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              name: 'Check PR Line Additions',
+              head_sha: context.sha,
+              status: 'completed',
+              conclusion: status,
+              output: {
+                title: 'PR Line Additions Check',
+                summary: message,
+              },
+            });
         env:
-          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          status: ${{ steps.check_lines.outputs.status }}
+          message: ${{ steps.check_lines.outputs.message }}
