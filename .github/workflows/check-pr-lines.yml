@@ -2,7 +2,7 @@ name: Check PR Line Additions
 
 on: 
   pull_request:
-    types: [opened, synchronize, reopened, edited]
+    types: [opened, synchronize, reopened]
 
 jobs:
   check_lines:
@@ -16,7 +16,7 @@ jobs:
         run: sudo apt-get install -y gh
 
       - name: Set up GitHub CLI with PAT
-        run: gh auth login --with-token < ${{ secrets.PAT_TOKEN }}
+        run: echo "${{ secrets.PAT_TOKEN }}" | gh auth login --with-token
 
       - name: Check line additions
         run: |
@@ -36,13 +36,13 @@ jobs:
           # Choose a random message based on the result
           if [ $ADDITIONS -gt 400 ]; then
             MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
+            echo "PR line additions check failed."
             gh pr comment $PR_NUMBER --body "$MESSAGE"
-            echo "PR line additions exceeds 400 lines."
             exit 1
           else
             MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
+            echo "PR line additions check passed."
             gh pr comment $PR_NUMBER --body "$MESSAGE"
-            echo "PR line additions are within limit."
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
