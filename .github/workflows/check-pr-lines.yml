@@ -21,7 +21,7 @@ jobs:
           PR_NUMBER=${{ github.event.pull_request.number }}
           ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
 
-          # Define arrays of success and failure messages
+          # Define arrays of success and failure messages with emojis
           SUCCESS_MESSAGES=("🎉 Awesome job! PR line additions are within the limit. Keep up the great work!" "👏 Great work! This PR is within the 400-line limit. Nice job!" "🌟 Fantastic! Your PR is concise and within the limit. Keep it up!")
           FAILURE_MESSAGES=("📏 This PR is a bit too long! Try splitting it into smaller parts. Keeping PRs under 400 lines helps everyone stay focused. Current: $ADDITIONS" "🚧 Oops! This PR is over 400 lines. Breaking it into smaller pieces will help. Current: $ADDITIONS" "⚠️ This PR is longer than 400 lines. Please break it into smaller chunks for better readability. Current: $ADDITIONS")
 
@@ -51,15 +51,18 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
-            const status = core.getInput('status');
-            const message = core.getInput('message');
-            const { context } = github;
+            const core = require('@actions/core');
+            const github = require('@actions/github');
+
+            const status = process.env.STATUS;
+            const message = process.env.MESSAGE;
+            const { repo, sha } = github.context;
 
             await github.rest.checks.create({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
+              owner: repo.owner,
+              repo: repo.repo,
               name: 'Check PR Line Additions',
-              head_sha: context.sha,
+              head_sha: sha,
               status: 'completed',
               conclusion: status,
               output: {
@@ -67,5 +70,6 @@ jobs:
                 summary: message,
               },
             });
-          status: ${{ steps.check_lines.outputs.status }}
-          message: ${{ steps.check_lines.outputs.message }}
+        env:
+          STATUS: ${{ steps.check_lines.outputs.status }}
+          MESSAGE: ${{ steps.check_lines.outputs.message }}
