@@ -15,8 +15,10 @@ jobs:
       - name: Install GitHub CLI
         run: sudo apt-get install -y gh
 
+      - name: Set up GitHub CLI with PAT
+        run: gh auth login --with-token < ${{ secrets.PAT_TOKEN }}
+
       - name: Check line additions
-        id: check_lines
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
@@ -35,10 +37,12 @@ jobs:
           if [ $ADDITIONS -gt 400 ]; then
             MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
             gh pr comment $PR_NUMBER --body "$MESSAGE"
+            echo "PR line additions exceeds 400 lines."
             exit 1
           else
             MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
             gh pr comment $PR_NUMBER --body "$MESSAGE"
+            echo "PR line additions are within limit."
           fi
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.PAT_TOKEN }}
