@@ -1,6 +1,6 @@
 name: Check PR Line Additions
 
-on: 
+on:
   pull_request:
     types: [opened, synchronize, reopened, edited]
 
@@ -20,7 +20,7 @@ jobs:
         run: |
           PR_NUMBER=${{ github.event.pull_request.number }}
           ADDITIONS=$(gh pr view $PR_NUMBER --json additions --jq '.additions')
-          
+
           # Define arrays of success and failure messages
           SUCCESS_MESSAGES=("🎉 Awesome job! PR line additions are within the limit. Keep up the great work!" "👏 Great work! This PR is within the 400-line limit. Nice job!" "🌟 Fantastic! Your PR is concise and within the limit. Keep it up!")
           FAILURE_MESSAGES=("📏 This PR is a bit too long! Try splitting it into smaller parts. Keeping PRs under 400 lines helps everyone stay focused. Current: $ADDITIONS" "🚧 Oops! This PR is over 400 lines. Breaking it into smaller pieces will help. Current: $ADDITIONS" "⚠️ This PR is longer than 400 lines. Please break it into smaller chunks for better readability. Current: $ADDITIONS")
@@ -42,9 +42,13 @@ jobs:
             echo "::set-output name=status::success"
             echo "::set-output name=message::$MESSAGE"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set PR status
         uses: actions/github-script@v6
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
           script: |
             const status = core.getInput('status');
@@ -63,8 +67,5 @@ jobs:
                 summary: message,
               },
             });
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        with:
           status: ${{ steps.check_lines.outputs.status }}
           message: ${{ steps.check_lines.outputs.message }}
