@@ -33,12 +33,10 @@ jobs:
 
           # Choose a random message based on the result
           if [ $ADDITIONS -gt 400 ]; then
-            echo "PR line additions are more than 400 lines. Should be reduced"
             MESSAGE=$(get_random_message "${FAILURE_MESSAGES[@]}")
             gh pr comment $PR_NUMBER --body "$MESSAGE"
             exit 1
           else
-            echo "PR line additions is within limit."
             MESSAGE=$(get_random_message "${SUCCESS_MESSAGES[@]}")
             gh pr comment $PR_NUMBER --body "$MESSAGE"
           fi
